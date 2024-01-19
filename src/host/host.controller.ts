@@ -201,6 +201,7 @@ export class HostController {
   logoutUser(@Req() req: Request, @Res() res: Response) {
     return this.hostService.logout(req, res);
   }
+  
   @Post('forgot-password')
   forgotpass(@Res() res: Response, @Body('email') email: string) {
     return this.hostService.forgotpassword(res, email);

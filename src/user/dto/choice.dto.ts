@@ -1,3 +1,4 @@
+import { OmitType, PartialType } from '@nestjs/mapped-types';
 import { IsNotEmpty, IsOptional } from 'class-validator';
 
 export class ChoiseDto {
@@ -15,4 +16,10 @@ export class ChoiseDto {
 
   @IsOptional()
   userId: string;
+
+  @IsOptional()
+  vehicleId: string
 }
+
+export class CustomChoiceDto extends PartialType(ChoiseDto) {}
+

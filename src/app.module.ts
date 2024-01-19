@@ -30,7 +30,7 @@ import { JwtService } from '@nestjs/jwt';
         },
       },
       defaults: {
-        from: '"No Reply" <no-reply@localhost>',
+        from: '"No Reply" <no-reply@carnovarentals>',
       },
       preview: true,
     }),

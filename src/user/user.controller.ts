@@ -16,7 +16,7 @@ import { UserService } from './user.service';
 import { Signupdto } from './dto/signup.dto';
 import { LoginDto } from './dto/login.dto';
 import { Request, Response } from 'express';
-import { ChoiseDto } from './dto/choice.dto';
+import { ChoiseDto, CustomChoiceDto } from './dto/choice.dto';
 import { CreateBookingDto } from './dto/create-booking.dto';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
@@ -89,6 +89,16 @@ export class AuthController {
   @Get('user-booking')
   getUserBooking(@Res() res: Response, @Req() req: Request) {
     return this.userservice.userbookings(res, req);
+  }
+
+  @Post('vehicle-available')
+  getVehicleAvailable(
+    @Body() data: any,
+    @Body('location') v_location: string,
+    @Res() res: Response, 
+    @Req() req: Request
+    ){            
+    return this.userservice.getAvailable(data, v_location, res, req)
   }
 
   @Patch('update-profile')

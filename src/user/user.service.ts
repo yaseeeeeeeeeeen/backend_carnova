@@ -2,7 +2,7 @@ import { JwtService } from '@nestjs/jwt';
 import { HttpStatus, Injectable, Req, Res } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { User } from './schemas/user.schema';
-import { Model } from 'mongoose';
+import mongoose, { Model } from 'mongoose';
 import * as bcrypt from 'bcryptjs';
 import { Signupdto } from './dto/signup.dto';
 import { LoginDto } from './dto/login.dto';
@@ -10,7 +10,7 @@ import { Request, Response } from 'express';
 import { MailerService } from '@nestjs-modules/mailer';
 import * as otpgenerater from 'otp-generator';
 import { Vehicles } from 'src/admin/schemas/vehicles.schema';
-import { ChoiseDto } from './dto/choice.dto';
+import { ChoiseDto, CustomChoiceDto } from './dto/choice.dto';
 import { CreateBookingDto } from './dto/create-booking.dto';
 import { Booking } from './schemas/bookings.schema';
 import * as moment from 'moment';
@@ -31,7 +31,7 @@ export class UserService {
     private _bookingModel: Model<Booking>,
     private _jwtservice: JwtService,
     private _mailer: MailerService,
-  ) {}
+  ) { }
 
   async signup(
     signupdto: Signupdto,
@@ -64,7 +64,7 @@ export class UserService {
           password: hashpass,
         };
       }
-console.log(this.tempUser);
+      console.log(this.tempUser);
       console.log(this.otpgenetated);
       res.status(200).json({ message: 'Success' });
     } catch (error) {
@@ -206,7 +206,7 @@ console.log(this.tempUser);
       const userDetails = await this._userModel.findById({
         _id: req.body.userId,
       });
-      
+
       filter.location = new RegExp(userDetails.choices.pickup, 'i');
 
       const vehicles = await this._vehicleModel.aggregate([
@@ -308,7 +308,7 @@ console.log(this.tempUser);
       const bookingDetails = await this._bookingModel
         .find({ _id: bookingid })
         .populate('userId')
-        .populate('vehicleId');        
+        .populate('vehicleId');
       return res.status(200).send(bookingDetails);
     } catch (err) {
       return res.status(500).json({ message: 'Internal Server Error' });
@@ -321,7 +321,7 @@ console.log(this.tempUser);
       const booking = await this._bookingModel
         .find({ userId: userId })
         .populate('vehicleId');
-              res.status(200).send(booking);
+      res.status(200).send(booking);
     } catch (err) {
       return res.status(500).json({ message: 'Internal Server Error' });
     }
@@ -417,6 +417,42 @@ console.log(this.tempUser);
     }
   }
 
+  async getAvailable(data: CustomChoiceDto, v_location: string, res: Response, req: Request) {
+    try {
+      const { startDate, endDate, vehicleId, userId } = data
+      const updateChoice = {
+        startDate: startDate,
+        endDate: endDate,
+        pickup: v_location,
+        dropoff: v_location
+      };
+      const available = await this._bookingModel.aggregate([
+        {
+          $match: {
+            vehicleId: new mongoose.Types.ObjectId(vehicleId),
+            $or: [
+              {
+                startDate: { $gte: data.startDate, $lte: endDate },
+              },
+              {
+                endDate: { $gte: data.startDate, $lte: endDate },
+              },
+            ],
+          },
+        },
+      ]);
+      await this._userModel.updateOne(
+        { _id: userId },
+        {
+          $set: { choices: updateChoice }
+        })
+      return res.status(HttpStatus.OK).json(!!available)
+    } catch (err) {
+      console.log(err.message);
+      res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ message: 'Internal Error' })
+    }
+  }
+
   async postReview(
     @Res() res: Response,
     @Req() req: Request,
@@ -454,19 +490,25 @@ console.log(this.tempUser);
   async forgotpassword(@Res() res: Response, email: string) {
     try {
       const existEmail = await this._userModel.findOne({ email: email });
-      if (!existEmail)
+      if (!existEmail) {
         res
           .status(HttpStatus.NOT_FOUND)
           .json({ message: 'Email not found. Please provide correct email' });
-
-      await this.sendForgotPassMail(res, existEmail.email, existEmail._id);
-      res.status(HttpStatus.OK).json({ message: 'Success' });
+      }
+      const otp = await otpgenerater.generate(4, {
+        digits: true,
+        upperCaseAlphabets: false,
+        lowerCaseAlphabets: false,
+        specialChars: false,
+      });
+      await this.sendForgotPassMail(res, existEmail.email, otp);
+      res.status(HttpStatus.OK).json({ message: 'Success', otp });
     } catch (err) {
       return res.status(500).json({ message: 'Internal Server Error' });
     }
   }
 
-  async sendForgotPassMail(@Res() res: Response, email: string, id: string) {
+  async sendForgotPassMail(@Res() res: Response, email: string, otp: string) {
     try {
       return this._mailer.sendMail({
         to: email,
@@ -475,10 +517,8 @@ console.log(this.tempUser);
         html: `
           <div style="max-width: 600px; margin: 0 auto; padding: 20px; font-family: Arial, sans-serif; background-color: #f4f4f4; border-radius: 5px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);">
               <h2 style="color: #333333;">Forgot Your Password?</h2>
-              <p style="color: #666666;">No worries! It happens to the best of us. Click the link below to reset your password:</p>
-              <p>
-                  <a href="http://localhost:4200/reset-password/${id}" style="display: inline-block; padding: 10px 20px; font-size: 16px; text-decoration: none; background-color: #007BFF; color: #ffffff; border-radius: 5px;">Reset Password</a>
-              </p>
+              <p style="color: #666666;">No worries! It happens to the best of us. Here is the OTP for verification :</p>
+              <h2>${ otp }</h2>
               <p>If you didn't request a password reset, please ignore this email.</p>
               <p>Thanks,<br>Your Carnova Team</p>
           </div>
@@ -512,12 +552,13 @@ console.log(this.tempUser);
       return res.status(500).json({ message: err.message });
     }
   }
+  
   async getAllVehicles(res: Response) {
     try {
-      const vehicles = await this._vehicleModel.find().populate('createdBy')      
-      return res.json({ vehicles }) 
+      const vehicles = await this._vehicleModel.find().populate('createdBy')
+      return res.json({ vehicles })
     } catch (err) {
-      res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ message : 'Internal server error'})
+      res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ message: 'Internal server error' })
     }
   }
 

@@ -807,7 +807,7 @@ export class HostService {
         hostRevenue: hostTotalRevenue,
         trending: mostOrdered,
         bookedCount: bookedTotalCount,
- completedCount:completeDCount,
+        completedCount:completeDCount,
         cancelledBooking:canclleDCount,
         latestOrders,
       });
