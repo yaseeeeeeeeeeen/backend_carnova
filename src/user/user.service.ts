@@ -446,7 +446,7 @@ export class UserService {
         {
           $set: { choices: updateChoice }
         })
-      return res.status(HttpStatus.OK).json(!!available)
+      return res.status(HttpStatus.OK).json(!!available.length)
     } catch (err) {
       console.log(err.message);
       res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ message: 'Internal Error' })
