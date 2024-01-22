@@ -8,7 +8,9 @@ import { ConfigService } from '@nestjs/config';
 import { ValidationPipe } from '@nestjs/common';
 import * as path from 'path';
 import { NestExpressApplication } from '@nestjs/platform-express';
+import express from 'express';
 declare const module: any;
+import * as bodyParser from 'body-parser';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
@@ -29,6 +31,10 @@ async function bootstrap() {
   app.useGlobalPipes(new ValidationPipe({ stopAtFirstError: true }));
   const configService = app.get(ConfigService);
   const port = configService.get('PORT');
+  app.use(express.json({ limit: '100mb' }));
+  app.use(express.urlencoded({ limit: '100mb', extended: true }));
+  app.use(bodyParser.json({ limit: '50mb' }));
+  app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
   app.use(
     session({
       secret: process.env.SECRET_KEY,
