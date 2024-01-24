@@ -501,16 +501,16 @@ export class HostService {
           .json({ message: 'Email not found. Please provide correct email' });
       }
       const h_id = existEmail._id
-      const otp = await otpgenerater.generate(4, {
+      const otp = otpgenerater.generate(4, {
         digits: true,
         upperCaseAlphabets: false,
         lowerCaseAlphabets: false,
         specialChars: false,
       });
-      if (h_id) {
+
         await this.sendForgotPassMail(res, existEmail.email, otp);
         res.status(HttpStatus.OK).json({ user_id: existEmail._id, otp, h_id });
-      }
+
     } catch (err) {
       return res.status(500).json({ message: 'Internal Server Error' });
     }

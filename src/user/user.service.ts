@@ -496,16 +496,16 @@ export class UserService {
           .json({ message: 'Email not found. Please provide correct email' });
       }
       const u_id = existEmail._id
-      const otp = await otpgenerater.generate(4, {
+      const otp = otpgenerater.generate(4, {
         digits: true,
         upperCaseAlphabets: false,
         lowerCaseAlphabets: false,
         specialChars: false,
       });
-      if (u_id) {
-        await this.sendForgotPassMail(res, existEmail.email, otp);
-        res.status(HttpStatus.OK).json({ message: 'Success', otp, u_id });
-      }
+      console.log(u_id); 
+      await this.sendForgotPassMail(res, existEmail.email, otp);
+      res.status(HttpStatus.OK).json({ message: 'Success', otp, u_id });
+
     } catch (err) {
       return res.status(500).json({ message: 'Internal Server Error' });
     }
