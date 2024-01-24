@@ -202,8 +202,8 @@ export class HostService {
 
   async uplaodProfile(file: any, @Res() res: Response, @Req() req: Request) {
     try {
-      console.log('aaaa'); 
-      
+      console.log('aaaa');
+
       const response = {
         originalname: file.originalname,
         filename: file.filename,
@@ -314,14 +314,14 @@ export class HostService {
         fuel,
         transmission,
         number,
-        seat:+seat,
-        model:+createdyear,
-        price:+price,
+        seat: +seat,
+        model: +createdyear,
+        price: +price,
         location,
         createdBy: claims.id,
         isVerified,
-        lat:+lat,
-        long:+long,
+        lat: +lat,
+        long: +long,
       });
       if (newCar) {
         await this.uploadVehicleImage(files.files, res, newCar._id);
@@ -330,7 +330,7 @@ export class HostService {
       return res.status(200).json({ message: 'Success' });
     } catch (err) {
       console.log(err);
-      
+
       res.status(500).json({ message: 'Internal Server Error' });
     }
   }
@@ -381,13 +381,13 @@ export class HostService {
     @Res() res: Response,
     id: string,
   ) {
-   
+
     try {
-      const { name, brand, createdyear, transmission, fuel, price, location,number ,lat,long,seat} =
+      const { name, brand, createdyear, transmission, fuel, price, location, number, lat, long, seat } =
         editVehicle;
       await this.vehicleModel.findOneAndUpdate(
         { _id: id },
-        { $set: { name, brand, createdyear, transmission, fuel, price, location,number,lat,long,seat } },
+        { $set: { name, brand, createdyear, transmission, fuel, price, location, number, lat, long, seat } },
       );
       await this.uploadVehicleImage(files, res, id);
       res.status(200).json({ message: 'Success' });
@@ -495,35 +495,40 @@ export class HostService {
   async forgotpassword(res: Response, email: string) {
     try {
       const existEmail = await this.hostModel.findOne({ email: email });
-      if (!existEmail)
+      if (!existEmail) {
         res
           .status(HttpStatus.NOT_FOUND)
           .json({ message: 'Email not found. Please provide correct email' });
-
-      await this.sendForgotPassMail(res, existEmail.email, existEmail._id);
-      res.status(HttpStatus.OK).json({ user_id : existEmail._id });
+      }
+      const h_id = existEmail._id
+      const otp = await otpgenerater.generate(4, {
+        digits: true,
+        upperCaseAlphabets: false,
+        lowerCaseAlphabets: false,
+        specialChars: false,
+      });
+      await this.sendForgotPassMail(res, existEmail.email, otp);
+      res.status(HttpStatus.OK).json({ user_id: existEmail._id, otp, h_id });
     } catch (err) {
       return res.status(500).json({ message: 'Internal Server Error' });
     }
   }
 
-  async sendForgotPassMail(res: Response, email: string, id: string) {
+  async sendForgotPassMail(res: Response, email: string, otp: any) {
     try {
       return this.mailServive.sendMail({
         to: email,
         from: process.env.DEV_MAIL,
         subject: 'Carnova Forgot Password',
-        html: `
-          <div style="max-width: 600px; margin: 0 auto; padding: 20px; font-family: Arial, sans-serif; background-color: #f4f4f4; border-radius: 5px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);">
-              <h2 style="color: #333333;">Forgot Your Password?</h2>
-              <p style="color: #666666;">No worries! It happens to the best of us. Click the link below to reset your password:</p>
-              <p>
-                  <a href="http://localhost:4200/host/reset-password/${id}" style="display: inline-block; padding: 10px 20px; font-size: 16px; text-decoration: none; background-color: #007BFF; color: #ffffff; border-radius: 5px;">Reset Password</a>
-              </p>
-              <p>If you didn't request a password reset, please ignore this email.</p>
-              <p>Thanks,<br>Your Carnova Team</p>
-          </div>
-      `,
+        html:  `
+        <div style="max-width: 600px; margin: 0 auto; padding: 20px; font-family: Arial, sans-serif; background-color: #f4f4f4; border-radius: 5px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);">
+            <h2 style="color: #333333;">Forgot Your Password?</h2>
+            <p style="color: #666666;">No worries! It happens to the best of us. Here is the OTP for verification :</p>
+            <h2>${ otp }</h2>
+            <p>If you didn't request a password reset, please ignore this email.</p>
+            <p>Thanks,<br>Your Carnova Team</p>
+        </div>
+    `,
       });
     } catch (err) {
       return res.status(500).json({ message: err.message });
@@ -554,7 +559,7 @@ export class HostService {
       return res.status(500).json({ message: err.message });
     }
   }
-///////////////////DashBord///////////////////////////////
+  ///////////////////DashBord///////////////////////////////
   async dashboard(res: Response, req: Request) {
     try {
       const hostId = req.body.userId;
@@ -597,8 +602,8 @@ export class HostService {
         },
       ]);
       console.log(hostRevenue[0]);
-      
-          const mostOrderedVehicle = await this.bookingModel.aggregate([
+
+      const mostOrderedVehicle = await this.bookingModel.aggregate([
         {
           $lookup: {
             from: 'vehicles',
@@ -699,7 +704,7 @@ export class HostService {
           },
         },
       ]);
-        
+
       const cancelledBooking = await this.bookingModel.aggregate([
         {
           $lookup: {
@@ -733,7 +738,7 @@ export class HostService {
       ]);
 
 
-        
+
 
       const latestOrders = await this.bookingModel.aggregate([
         {
@@ -774,44 +779,44 @@ export class HostService {
       let hostTotalRevenue: number;
       let mostOrdered: any[];
       let bookedTotalCount: number;
-      let completeDCount:number;
-      let canclleDCount:number;
+      let completeDCount: number;
+      let canclleDCount: number;
 
-      if(hostRevenue.length==0){
-           hostTotalRevenue = 0;
-      }else{
-            hostTotalRevenue = hostRevenue[0].totalRevenue; 
+      if (hostRevenue.length == 0) {
+        hostTotalRevenue = 0;
+      } else {
+        hostTotalRevenue = hostRevenue[0].totalRevenue;
       }
-      if(mostOrderedVehicle.length==0){
+      if (mostOrderedVehicle.length == 0) {
         mostOrdered = [];
-      }else{
-             mostOrdered = mostOrderedVehicle;
+      } else {
+        mostOrdered = mostOrderedVehicle;
       }
-      if(bookedCount.length==0){
-        bookedTotalCount=0;
-      }else{
-        bookedTotalCount=bookedCount[0].count;
+      if (bookedCount.length == 0) {
+        bookedTotalCount = 0;
+      } else {
+        bookedTotalCount = bookedCount[0].count;
       }
-      if(completedCount.length==0){
-        completeDCount=0;
-      }else{
-        completeDCount=completedCount[0].count;
+      if (completedCount.length == 0) {
+        completeDCount = 0;
+      } else {
+        completeDCount = completedCount[0].count;
       }
-      if(cancelledBooking.length==0){
-        canclleDCount=0;
-      }else{
-        canclleDCount=cancelledBooking[0].count;
+      if (cancelledBooking.length == 0) {
+        canclleDCount = 0;
+      } else {
+        canclleDCount = cancelledBooking[0].count;
       }
-      
+
       res.status(HttpStatus.OK).json({
         hostRevenue: hostTotalRevenue,
         trending: mostOrdered,
         bookedCount: bookedTotalCount,
-        completedCount:completeDCount,
-        cancelledBooking:canclleDCount,
+        completedCount: completeDCount,
+        cancelledBooking: canclleDCount,
         latestOrders,
       });
-      
+
     } catch (err) {
       res
         .status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -827,5 +832,5 @@ export class HostService {
       res.status(500).json({ message: 'Internal Error' });
     }
   }
-  
+
 }
