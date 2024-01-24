@@ -507,8 +507,10 @@ export class HostService {
         lowerCaseAlphabets: false,
         specialChars: false,
       });
-      await this.sendForgotPassMail(res, existEmail.email, otp);
-      res.status(HttpStatus.OK).json({ user_id: existEmail._id, otp, h_id });
+      if (h_id) {
+        await this.sendForgotPassMail(res, existEmail.email, otp);
+        res.status(HttpStatus.OK).json({ user_id: existEmail._id, otp, h_id });
+      }
     } catch (err) {
       return res.status(500).json({ message: 'Internal Server Error' });
     }
@@ -520,11 +522,11 @@ export class HostService {
         to: email,
         from: process.env.DEV_MAIL,
         subject: 'Carnova Forgot Password',
-        html:  `
+        html: `
         <div style="max-width: 600px; margin: 0 auto; padding: 20px; font-family: Arial, sans-serif; background-color: #f4f4f4; border-radius: 5px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);">
             <h2 style="color: #333333;">Forgot Your Password?</h2>
             <p style="color: #666666;">No worries! It happens to the best of us. Here is the OTP for verification :</p>
-            <h2>${ otp }</h2>
+            <h2>${otp}</h2>
             <p>If you didn't request a password reset, please ignore this email.</p>
             <p>Thanks,<br>Your Carnova Team</p>
         </div>
