@@ -507,9 +507,8 @@ export class HostService {
         lowerCaseAlphabets: false,
         specialChars: false,
       });
-
-        await this.sendForgotPassMail(res, existEmail.email, otp);
-        res.status(HttpStatus.OK).json({ user_id: existEmail._id, otp, h_id });
+      await this.sendForgotPassMail(res, existEmail.email, otp);
+      res.status(HttpStatus.OK).json({ user_id: existEmail._id, otp, h_id });
 
     } catch (err) {
       return res.status(500).json({ message: 'Internal Server Error' });
